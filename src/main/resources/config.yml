@@ -1,0 +1,128 @@
+# ============================================================
+#  YtStream 設定ファイル
+#  変更後は /ytstream reload(実行中の配信へは /ytstream restart 後に反映)
+#  配信画面のレイアウト確認は /ytstream preview(plugins/YtStream/preview.png)
+# ============================================================
+
+# 配信画面に表示するサーバー名
+server-name: "My Minecraft Server"
+
+youtube:
+  # ストリームキーの指定方法(優先順位: 環境変数 > secrets.yml > ここ)
+  #   1. 環境変数 YTSTREAM_KEY            ← 推奨
+  #   2. plugins/YtStream/secrets.yml に  stream-key: "xxxx-xxxx-xxxx-xxxx-xxxx"
+  #   3. この項目(平文保存になるため非推奨)
+  # ストリームキーはゲーム内コマンドで入力しないでください(コマンドログに残ります)。
+  stream-key: ""
+  rtmp-url: "rtmp://a.rtmp.youtube.com/live2"   # rtmps://a.rtmps.youtube.com:443/live2 も可
+  # YouTube以外のRTMPサーバーへ送る場合のみ true(誤送信・情報漏えい防止の安全装置)
+  allow-custom-host: false
+
+video:
+  width: 1280            # 1280x720 が既定。1920x1080 も可(CPU負荷は約2倍)
+  height: 720
+  fps: 30                # 静止画面が中心なので 15〜30 で十分。下げるほどCPUに優しい
+  bitrate-kbps: 2500     # 720p30の目安 2500〜4500 / 1080p30の目安 4500〜9000
+  codec: libx264         # libx264 | h264_nvenc | h264_qsv | h264_videotoolbox | h264_amf
+  preset: veryfast       # libx264のみ。CPUが厳しければ superfast / ultrafast
+  tune: zerolatency
+  threads: 2             # エンコードに使うCPUスレッド数(0=自動)。Minecraft本体を守るため既定は2
+  low-priority: true     # Linuxで nice 10 を付けて起動(サーバー本体を優先)
+
+audio:
+  enabled: true          # 無音トラックを付与(YouTubeの音声なし警告を避ける)
+  bitrate-kbps: 128
+
+ffmpeg:
+  # "ffmpeg" = plugins/YtStream/ffmpeg/ → PATH の順で自動検索。絶対パスも指定可
+  path: "ffmpeg"
+
+reconnect:
+  enabled: true
+  max-attempts: 0        # 0 = 無制限(サーバー稼働中は配信を維持し続ける。推奨)
+  initial-delay-seconds: 5
+  max-delay-seconds: 60  # 指数バックオフの上限
+  stall-timeout-seconds: 20   # FFmpegの送信がこの秒数止まったら切断とみなして自動復旧
+
+# サーバー起動時に自動で配信を開始(常時配信したい場合)
+auto-start:
+  enabled: false
+  delay-seconds: 15
+
+# BGM: plugins/YtStream/bgm/ に mp3/ogg/wav/flac/m4a/opus を置くだけ(配信中の追加も自動反映)
+# ※ 著作権フリー/ライセンス済みの曲を使ってください(YouTubeのContent IDで配信が止まる場合があります)
+bgm:
+  enabled: true
+  folder: "bgm"
+  shuffle: true
+  volume: 50             # 0〜100(ゲーム内: /ytstream bgm volume <0-100>)
+  show-now-playing: true # 画面下部に「♪ 曲名」を表示
+
+# 画面下部に順番に表示されるお知らせ(参加アドレス・Discord・ルールなど。最大10件)
+# {online} {max} が使えます。視聴者をプレイヤーへ変える一番大事な枠です。
+info:
+  enabled: true
+  interval-seconds: 8
+  messages:
+    - "サーバーに参加しよう！ Java版: play.example.com / 統合版: play.example.com:19132"
+    - "Discordで仲間募集中 → discord.gg/xxxxxxx"
+    - "現在 {online} / {max} 人がプレイ中！ 初心者も大歓迎です"
+
+# サーバー内のプレイヤーへの配信告知(YouTubeのURLを入れると視聴者が増えます)
+promo:
+  live-url: ""           # 例 "https://www.youtube.com/watch?v=xxxxxxxxxxx" か チャンネルの /live URL
+  broadcast-on-live: true          # 配信開始時にサーバーチャットで告知
+  broadcast-interval-minutes: 30   # 配信中の定期告知(0で無効)
+  broadcast-message: "サーバーをYouTubeでライブ配信中です！ クリックで視聴 {url}"
+  join-notice: true                # 配信中に参加した本人へ「配信に映ります」と通知(プライバシー配慮)
+  join-notice-message: "このサーバーはYouTubeでライブ配信中です。チャットとプレイヤー名が配信に映ります。"
+
+background:
+  # plugins/YtStream/ 内の画像(PNG/JPG)。無い場合は内蔵のMinecraft風背景を自動生成
+  path: "background.png"
+
+theme:
+  name: default          # default | nether | end
+  accent: ""             # 例 "#55FF55"(空=テーマ既定)
+  panel-opacity: 62      # 0〜100
+  font: "SansSerif"      # 日本語が文字化けする場合は日本語フォント名か font-file を指定
+  font-file: ""          # plugins/YtStream/ 内のTTF/OTF(例 "fonts/NotoSansJP.ttf")
+
+display:
+  chat: true             # ※チャットは公開配信に映ります。プライバシーに注意
+  join-leave: true
+  events: true           # 実績(Advancement)達成・死亡の通知
+  player-list: true
+  uptime: true
+
+chat:
+  max-lines: 10
+  max-length: 100
+  lifetime-seconds: 0    # 0=消えない(古いものから押し出される) / 例 60=60秒で消える
+  blocked-patterns: []   # 伏せ字にする正規表現。例: ["\\d{3}-\\d{4}", "password"]
+
+notifications:
+  lifetime-seconds: 6
+
+players:
+  hide-vanished: true    # バニッシュ中のプレイヤーを映さない(metadata "vanished")
+  bedrock-prefix: "."    # Floodgateのプレフィックス(統合版プレイヤー判別用)
+
+# 各パーツの位置。画面に対する相対値(0〜1)なので解像度を変えても崩れません
+layout:
+  header:  { x: 0.02, y: 0.03, w: 0.96, h: 0.13 }
+  toasts:  { x: 0.02, y: 0.19, w: 0.46, h: 0.26 }
+  chat:    { x: 0.02, y: 0.50, w: 0.48, h: 0.38 }
+  players: { x: 0.76, y: 0.19, w: 0.22, h: 0.69 }
+  footer:  { x: 0.02, y: 0.905, w: 0.96, h: 0.065 }
+
+# 表示文言({name} {n} が置換されます)
+labels:
+  online: "オンライン"
+  uptime: "稼働時間"
+  players: "プレイヤー"
+  chat: "チャット"
+  joined: "{name} が参加しました"
+  left: "{name} が退出しました"
+  more: "他 {n} 人"
+  nowplaying: "♪"
